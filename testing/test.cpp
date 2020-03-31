@@ -38,9 +38,11 @@ void *client_generator(void* args) {
     } //if
 
     //generate random numbers
-    const char *message = "5, 10\n";
+    const char *message = "5,10\n";
     send(socket_fd, message, strlen(message), 0);
-
+    int newValue;
+    recv(socket_fd, &newValue, sizeof(newValue), 0);
+    cout << "[DEBUG] receive new value" << newValue << endl;
     freeaddrinfo(host_info_list);
     close(socket_fd);
 }
@@ -51,9 +53,10 @@ int main(int argc, char **argv) {
 
     for (int i = 0; i < TEST_NUM; ++i) {
         threads[i] = pthread_create(&thread_ids[i], NULL, client_generator, NULL);
-        //usleep(1000);
+        sleep(1000);
     }
     // for (int i = 0; i < THREAD_NUM; ++i) {
     //     pthread_join(thread_ids[i], NULL);
     // }
+    return EXIT_SUCCESS;
 }

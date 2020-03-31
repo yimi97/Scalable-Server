@@ -5,8 +5,10 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <unistd.h>
-#include <atomic>
 #include <vector>
+#include <thread>
+#include <sys/time.h>
+#include <sstream>
 
 #define HOSTNAME "127.0.0.1"
 #define PORT "12345"
@@ -19,7 +21,7 @@ private:
     struct addrinfo *host_info_list;
     struct sockaddr_storage socket_addr;
     socklen_t socket_addr_len;
-    std::vector<atomic<int>> * buckets;
+    std::vector<int> * buckets;
 public:
     Server(int bucketNum);
     void run();

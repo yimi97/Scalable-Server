@@ -1,4 +1,5 @@
 #include "server.h"
+#include "server.cpp"
 
 using namespace std;
 int main(int argc, char **argv) {
@@ -9,7 +10,7 @@ int main(int argc, char **argv) {
     int bucketNum = atoi(argv[1]);
 
     Server * s = new Server(bucketNum);
-    s->run();
+    s->run(); //TODO: PER/PRE
 
     return EXIT_SUCCESS;
 }

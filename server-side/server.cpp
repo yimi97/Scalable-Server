@@ -1,20 +1,41 @@
 #include "server.h"
-#include "request.cpp"
 
+#define BUFFER_SIZE 512
 using namespace std;
 
-void request_handler(int client_fd, Request req, vector<atomic<int>> * buckets) {
-    int delay = req.getDelay();
-    int bucketNum = req.getBucketNum();
+void request_handler(int client_fd, string req, vector<int> * buckets) {
+    //parse request
+    int delimiter = req.find(',');
+    int delay = stoi(req.substr(0, delimiter));
+    int bucketNum = stoi(req.substr(delimiter + 1));
     //delay
-    //fetch_add
-    //sendBack
-    //closeFd
+    struct timeval start, check, end;
+    double elapsed_seconds;
+    gettimeofday(&start, NULL);
+    do {
+        gettimeofday(&check, NULL); 
+        elapsed_seconds = (check.tv_sec + (check.tv_usec/1000000.0)) - (start.tv_sec + (start.tv_usec/1000000.0)); 
+    } while (elapsed_seconds < delay);
+    //lock and add
 
+    //TODO: lock the single element!
+    
+    buckets->at(bucketNum) = buckets->at(bucketNum) + delay;
+    //sendBack
+    stringstream ss;
+    ss << buckets->at(bucketNum);
+    const char * value = ss.str().c_str();
+    cout << "[DEBUG] new value is " << value << endl;
+    send(client_fd, value, strlen(value), 0);
+
+    //TODO: unlock
+
+    //closeFd
+    close(client_fd);
 }
 Server::Server(int bucketNum) {
 
-    buckets = new vector<atomic<int>>(bucketNum);
+    buckets = new vector<int>(bucketNum, 0);
     socklen_t socket_addr_len = sizeof(socket_addr);
     memset(&host_info, 0, sizeof(host_info));
     host_info.ai_family   = AF_UNSPEC;
@@ -56,8 +77,19 @@ Server::Server(int bucketNum) {
 void Server::run() {
     while(true) {
         //accept
-        //receive and create req
-        //create thread, pass fd and req
+        int client_connection_fd;
+        client_connection_fd = accept(socket_fd, (struct sockaddr *)&socket_addr, &socket_addr_len);
+        if (client_connection_fd == -1) {
+            cerr << "Error: cannot accept connection on socket" << endl;
+            continue;
+        } //if
+        //receive
+        char buffer[BUFFER_SIZE];
+        recv(client_connection_fd, buffer, BUFFER_SIZE, 0);
+        cout << "[DEBUG] received request" << buffer << endl;
+        //create thread
+        thread t(request_handler, client_connection_fd, string(buffer), buckets);
+        t.detach();
     }
 }
 
