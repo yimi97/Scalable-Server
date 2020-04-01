@@ -9,9 +9,14 @@
 #include <thread>
 #include <sys/time.h>
 #include <sstream>
+#include <mutex>
+#include <list>
 
 #define HOSTNAME "127.0.0.1"
 #define PORT "12345"
+#define BUFFER_SIZE 20
+#define POOL_SIZE 500
+
 
 class Server {
 private:
@@ -24,7 +29,8 @@ private:
     std::vector<int> * buckets;
 public:
     Server(int bucketNum);
-    void run();
+    void per_run();
+    void pre_run();
     ~Server();
 };
 #endif

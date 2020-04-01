@@ -5,6 +5,7 @@
 #include <unistd.h>
 
 #define TEST_NUM 100
+#define BUFFER_SIZE 20
 #define SERVER_IP "127.0.0.1"
 #define SERVER_PORT "12345"
 
@@ -40,23 +41,20 @@ void *client_generator(void* args) {
     //generate random numbers
     const char *message = "5,10\n";
     send(socket_fd, message, strlen(message), 0);
-    int newValue;
-    recv(socket_fd, &newValue, sizeof(newValue), 0);
-    cout << "[DEBUG] receive new value" << newValue << endl;
+    char valueBuffer[BUFFER_SIZE];
+    recv(socket_fd, valueBuffer, BUFFER_SIZE, 0);
+    cout << "[DEBUG] receive new value " << valueBuffer << endl;
     freeaddrinfo(host_info_list);
     close(socket_fd);
 }
 int main(int argc, char **argv) {
-    int threads[TEST_NUM];
-    pthread_attr_t thread_attr[TEST_NUM];
-    pthread_t thread_ids[TEST_NUM];
+    pthread_t thread[TEST_NUM];
 
     for (int i = 0; i < TEST_NUM; ++i) {
-        threads[i] = pthread_create(&thread_ids[i], NULL, client_generator, NULL);
-        sleep(1000);
+        pthread_create(&thread[i], NULL, client_generator, NULL);
     }
-    // for (int i = 0; i < THREAD_NUM; ++i) {
-    //     pthread_join(thread_ids[i], NULL);
-    // }
+    for (int i = 0; i < TEST_NUM; ++i) {
+        pthread_join(thread[i], NULL);
+    }
     return EXIT_SUCCESS;
 }
