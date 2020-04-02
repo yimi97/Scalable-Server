@@ -10,7 +10,7 @@ ofstream log_flow;
 
 void log(string str){
     log_flow.open(MYLOG, ofstream::out | ofstream::app);
-    log_flow << str << endl;
+    log_flow << str;
     log_flow.close();
 }
 
