@@ -3,7 +3,19 @@ using namespace std;
 
 mutex buckets_mtx;
 mutex fds_mtx;
+mutex print_mtx;
 sem_t s;
+atomic<int> req_counter(0);
+
+void delayTime(int d) {
+    struct timeval start, check, end;
+    double elapsed_seconds;
+    gettimeofday(&start, NULL);
+    do {
+        gettimeofday(&check, NULL); 
+        elapsed_seconds = (check.tv_sec + (check.tv_usec/1000000.0)) - (start.tv_sec + (start.tv_usec/1000000.0)); 
+    } while (elapsed_seconds < d);
+}
 
 void per_request_handler(int client_fd, string req, vector<int> * buckets) {
     //parse request
@@ -11,13 +23,7 @@ void per_request_handler(int client_fd, string req, vector<int> * buckets) {
     int delay = stoi(req.substr(0, delimiter));
     int bucketNum = stoi(req.substr(delimiter + 1));
     //delay
-    struct timeval start, check, end;
-    double elapsed_seconds;
-    gettimeofday(&start, NULL);
-    do {
-        gettimeofday(&check, NULL); 
-        elapsed_seconds = (check.tv_sec + (check.tv_usec/1000000.0)) - (start.tv_sec + (start.tv_usec/1000000.0)); 
-    } while (elapsed_seconds < delay);
+    delayTime(delay);
     //lock and add
     unique_lock<mutex> lck (buckets_mtx);
     buckets->at(bucketNum) = buckets->at(bucketNum) + delay;
@@ -25,9 +31,10 @@ void per_request_handler(int client_fd, string req, vector<int> * buckets) {
     stringstream ss;
     ss << buckets->at(bucketNum);
     const char * value = ss.str().c_str();
-    cout << "[DEBUG] new value is " << value << endl;
+    //cout << "[DEBUG] new value is " << value << endl;
     send(client_fd, value, strlen(value), 0);
     //closeFd
+    req_counter.fetch_add(1, std::memory_order_relaxed);
     close(client_fd);
 }
 void pre_request_handler(list<int> * request_fds, vector<int> * buckets) {
@@ -40,20 +47,14 @@ void pre_request_handler(list<int> * request_fds, vector<int> * buckets) {
         lck1.unlock();
         char buffer[BUFFER_SIZE];
         recv(cur_fd, buffer, BUFFER_SIZE, 0);
-        cout << "[DEBUG] received request" << buffer << endl;
+        //cout << "[DEBUG] received request" << buffer << endl;
         string req(buffer);
         //parse request
         int delimiter = req.find(',');
         int delay = stoi(req.substr(0, delimiter));
         int bucketNum = stoi(req.substr(delimiter + 1));
         //delay
-        struct timeval start, check, end;
-        double elapsed_seconds;
-        gettimeofday(&start, NULL);
-        do {
-            gettimeofday(&check, NULL); 
-            elapsed_seconds = (check.tv_sec + (check.tv_usec/1000000.0)) - (start.tv_sec + (start.tv_usec/1000000.0)); 
-        } while (elapsed_seconds < delay);
+        delayTime(delay);
         //lock and add
         unique_lock<mutex> lck2 (buckets_mtx);
         buckets->at(bucketNum) = buckets->at(bucketNum) + delay;
@@ -61,10 +62,24 @@ void pre_request_handler(list<int> * request_fds, vector<int> * buckets) {
         stringstream ss;
         ss << buckets->at(bucketNum);
         const char * value = ss.str().c_str();
-        cout << "[DEBUG] new value is " << value << endl;
+        //cout << "[DEBUG] new value is " << value << endl;
         send(cur_fd, value, strlen(value), 0);
         //closeFd
+        req_counter.fetch_add(1, std::memory_order_relaxed);
         close(cur_fd);
+    }
+}
+void throughput_cal(int interval) {
+    int loop_num = 0;
+    int prev_req_counter = 0;
+    while (true) {
+        ++loop_num;
+        delayTime(1);
+        unique_lock<mutex> lck (print_mtx);
+        if (int increment = req_counter - prev_req_counter) {
+            cout << "throughput(req/sec) " << increment << endl;
+        }
+        prev_req_counter = req_counter;
     }
 }
 
@@ -107,6 +122,8 @@ Server::Server(int bucketNum) {
         cerr << "  (" << HOSTNAME << "," << PORT << ")" << endl;
         exit(EXIT_FAILURE);
     } //if
+    thread t(throughput_cal, 5);
+    t.detach();
 }
 
 void Server::per_run() {
@@ -121,7 +138,7 @@ void Server::per_run() {
         //receive
         char buffer[BUFFER_SIZE];
         recv(client_connection_fd, buffer, BUFFER_SIZE, 0);
-        cout << "[DEBUG] received request" << buffer << endl;
+        //cout << "[DEBUG] received request" << buffer << endl;
         //create thread
         thread t(per_request_handler, client_connection_fd, string(buffer), buckets);
         t.detach();
