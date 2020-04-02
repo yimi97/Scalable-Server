@@ -1,5 +1,10 @@
 #include "../src/config.h"
 
+// ============= change server info here ====================
+#define SERVER_ADDR "vcm-14348.vm.duke.edu"
+#define SERVER_PORT "12345"
+// ==========================================================
+
 using namespace std;
 void *client_generator(void* args) {
     int status;
@@ -10,7 +15,7 @@ void *client_generator(void* args) {
     host_info.ai_family   = AF_UNSPEC;
     host_info.ai_socktype = SOCK_STREAM;
 
-    status = getaddrinfo(HOSTNAME, PORT, &host_info, &host_info_list);
+    status = getaddrinfo(SERVER_ADDR, SERVER_PORT, &host_info, &host_info_list);
     if (status != 0) {
         cout << "Error(Client): cannot get address info for host" << endl;
         exit(EXIT_FAILURE);
