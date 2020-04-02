@@ -12,7 +12,7 @@
 // =====================================================
 
 #define BUFFER_SIZE 20
-#define MYLOG "throughput.log"
+#define MYLOG "/var/log/erss/throughput.log"
 #include <iostream>
 #include <cstring>
 #include <sys/socket.h>
