@@ -1,4 +1,4 @@
-#include "../config.h"
+#include "../src/config.h"
 
 using namespace std;
 void *client_generator(void* args) {
