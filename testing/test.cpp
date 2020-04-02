@@ -1,13 +1,4 @@
-#include <iostream>
-#include <cstring>
-#include <sys/socket.h>
-#include <netdb.h>
-#include <unistd.h>
-
-#define TEST_NUM 100
-#define BUFFER_SIZE 20
-#define SERVER_IP "127.0.0.1"
-#define SERVER_PORT "12345"
+#include "../config.h"
 
 using namespace std;
 void *client_generator(void* args) {
@@ -19,7 +10,7 @@ void *client_generator(void* args) {
     host_info.ai_family   = AF_UNSPEC;
     host_info.ai_socktype = SOCK_STREAM;
 
-    status = getaddrinfo(SERVER_IP, SERVER_PORT, &host_info, &host_info_list);
+    status = getaddrinfo(HOSTNAME, PORT, &host_info, &host_info_list);
     if (status != 0) {
         cout << "Error(Client): cannot get address info for host" << endl;
         exit(EXIT_FAILURE);
@@ -39,7 +30,16 @@ void *client_generator(void* args) {
     } //if
 
     //generate random numbers
-    const char *message = "5,10\n";
+    int delay = 0;
+    int bucketNum = rand() % (BUCKET_NUM - 1) + 0;
+    if (DELAY_SMALL) {
+        delay = rand() % 3 + 1;
+    } else {
+        delay = rand() % 20 + 1;
+    }
+    stringstream ss;
+    ss << delay << "," << bucketNum << endl;
+    const char *message = ss.str().c_str();
     send(socket_fd, message, strlen(message), 0);
     char valueBuffer[BUFFER_SIZE];
     recv(socket_fd, valueBuffer, BUFFER_SIZE, 0);
@@ -48,12 +48,13 @@ void *client_generator(void* args) {
     close(socket_fd);
 }
 int main(int argc, char **argv) {
-    pthread_t thread[TEST_NUM];
+    srand (time(NULL));
+    pthread_t thread[REQUEST_NUM];
 
-    for (int i = 0; i < TEST_NUM; ++i) {
+    for (int i = 0; i < REQUEST_NUM; ++i) {
         pthread_create(&thread[i], NULL, client_generator, NULL);
     }
-    for (int i = 0; i < TEST_NUM; ++i) {
+    for (int i = 0; i < REQUEST_NUM; ++i) {
         pthread_join(thread[i], NULL);
     }
     return EXIT_SUCCESS;

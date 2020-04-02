@@ -1,23 +1,6 @@
 #ifndef SERVER_H
 #define SERVER_H
-#include <iostream>
-#include <cstring>
-#include <sys/socket.h>
-#include <netdb.h>
-#include <unistd.h>
-#include <vector>
-#include <thread>
-#include <sys/time.h>
-#include <sstream>
-#include <mutex>
-#include <list>
-
-#define HOSTNAME "127.0.0.1"
-#define PORT "12345"
-#define BUFFER_SIZE 20
-#define POOL_SIZE 500
-
-
+#include "../config.h"
 class Server {
 private:
     int status;
