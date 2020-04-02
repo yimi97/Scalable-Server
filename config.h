@@ -12,6 +12,7 @@
 // =====================================================
 
 #define BUFFER_SIZE 20
+#define MYLOG "../throughput.log"
 #include <iostream>
 #include <cstring>
 #include <sys/socket.h>
@@ -27,5 +28,6 @@
 #include <list>
 #include <semaphore.h>
 #include <atomic>
+#include <fstream>
 
 #endif

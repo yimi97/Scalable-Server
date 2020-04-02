@@ -6,6 +6,13 @@ mutex fds_mtx;
 mutex print_mtx;
 sem_t s;
 atomic<int> req_counter(0);
+ofstream log_flow;
+
+void log(string str){
+    log_flow.open(MYLOG, ofstream::out | ofstream::app);
+    log_flow << str << endl;
+    log_flow.close();
+}
 
 void delayTime(int d) {
     struct timeval start, check, end;
@@ -17,7 +24,7 @@ void delayTime(int d) {
     } while (elapsed_seconds < d);
 }
 
-void per_request_handler(int client_fd, string req, vector<int> * buckets) {
+void requestHelper (int client_fd, string req, vector<int> * buckets) {
     //parse request
     int delimiter = req.find(',');
     int delay = stoi(req.substr(0, delimiter));
@@ -37,7 +44,12 @@ void per_request_handler(int client_fd, string req, vector<int> * buckets) {
     req_counter.fetch_add(1, std::memory_order_relaxed);
     close(client_fd);
 }
-void pre_request_handler(list<int> * request_fds, vector<int> * buckets) {
+
+void perRequestHandler(int client_fd, string req, vector<int> * buckets) {
+    requestHelper(client_fd, req, buckets);
+}
+
+void preRequestHandler(list<int> * request_fds, vector<int> * buckets) {
     while (true) {
         sem_wait(&s);
         unique_lock<mutex> lck1 (fds_mtx);
@@ -49,27 +61,10 @@ void pre_request_handler(list<int> * request_fds, vector<int> * buckets) {
         recv(cur_fd, buffer, BUFFER_SIZE, 0);
         //cout << "[DEBUG] received request" << buffer << endl;
         string req(buffer);
-        //parse request
-        int delimiter = req.find(',');
-        int delay = stoi(req.substr(0, delimiter));
-        int bucketNum = stoi(req.substr(delimiter + 1));
-        //delay
-        delayTime(delay);
-        //lock and add
-        unique_lock<mutex> lck2 (buckets_mtx);
-        buckets->at(bucketNum) = buckets->at(bucketNum) + delay;
-        //sendBack
-        stringstream ss;
-        ss << buckets->at(bucketNum);
-        const char * value = ss.str().c_str();
-        //cout << "[DEBUG] new value is " << value << endl;
-        send(cur_fd, value, strlen(value), 0);
-        //closeFd
-        req_counter.fetch_add(1, std::memory_order_relaxed);
-        close(cur_fd);
+        requestHelper(cur_fd, req, buckets);
     }
 }
-void throughput_cal(int interval) {
+void throughputCal(int interval) {
     int loop_num = 0;
     int prev_req_counter = 0;
     while (true) {
@@ -77,7 +72,11 @@ void throughput_cal(int interval) {
         delayTime(1);
         unique_lock<mutex> lck (print_mtx);
         if (int increment = req_counter - prev_req_counter) {
-            cout << "throughput(req/sec) " << increment << endl;
+            stringstream ss;
+            ss << "throughput(req/sec) " << increment << endl;
+            string str = ss.str();
+            cout << ss.str();
+            log(str);
         }
         prev_req_counter = req_counter;
     }
@@ -122,7 +121,7 @@ Server::Server(int bucketNum) {
         cerr << "  (" << HOSTNAME << "," << PORT << ")" << endl;
         exit(EXIT_FAILURE);
     } //if
-    thread t(throughput_cal, 5);
+    thread t(throughputCal, 5);
     t.detach();
 }
 
@@ -140,7 +139,7 @@ void Server::per_run() {
         recv(client_connection_fd, buffer, BUFFER_SIZE, 0);
         //cout << "[DEBUG] received request" << buffer << endl;
         //create thread
-        thread t(per_request_handler, client_connection_fd, string(buffer), buckets);
+        thread t(perRequestHandler, client_connection_fd, string(buffer), buckets);
         t.detach();
     }
 }
@@ -148,7 +147,7 @@ void Server::pre_run() {
     sem_init(&s, 0, 0);
     list<int> *request_fds = new list<int>();
     for (int i = 0; i < POOL_SIZE; ++i) {
-        thread t(pre_request_handler, request_fds, buckets);
+        thread t(preRequestHandler, request_fds, buckets);
         t.detach();
     }
     while(true) {
