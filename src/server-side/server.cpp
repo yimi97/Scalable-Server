@@ -3,7 +3,6 @@ using namespace std;
 
 mutex buckets_mtx;
 mutex fds_mtx;
-mutex print_mtx;
 sem_t s;
 atomic<int> req_counter(0);
 ofstream log_flow;
@@ -75,15 +74,13 @@ void countTime() {
         }
     }
     while (true) {
-        prev_req_counter = req_counter;
-        sleep(1);
-        if (req_counter - prev_req_counter == 0) {
+        if (clock() - start > 60 * CLOCKS_PER_SEC) {
             end = clock();
             break;
         }
     }
     stringstream ss;
-    ss << "Total time (10000 reqs) :" << (end - start) / CLOCKS_PER_SEC << "s" << endl;
+    ss << "Throughput " << req_counter << ":" << (end - start) / CLOCKS_PER_SEC << "s" << endl;
     string str = ss.str();
     cout << ss.str();
     log(str);
@@ -167,6 +164,7 @@ void Server::pre_run() {
         unique_lock<mutex> lck (fds_mtx);
         request_fds->push_back(client_connection_fd);
         sem_post(&s);
+        lck.unlock();
     }
 }
 

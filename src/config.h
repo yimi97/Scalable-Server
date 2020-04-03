@@ -2,7 +2,7 @@
 #define CONFIG_H
 
 // ============= change config here ====================
-#define BUCKET_NUM 2048  //32, 128, 512, 2048
+#define BUCKET_NUM 32  //32, 128, 512, 2048
 #define DELAY_SMALL true //true: small delay; false: large delay
 #define PER_CREATE true //true: PER CREATE; false: PRE CREATE
 #define REQUEST_NUM 10000
