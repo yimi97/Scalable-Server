@@ -3,4 +3,4 @@ make clean
 make
 touch /var/log/erss/throughput.log
 rm /var/log/erss/throughput.log
-./server 2048
+./server 32

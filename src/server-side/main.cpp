@@ -4,6 +4,7 @@
 
 using namespace std;
 int main(int argc, char **argv) {
+    //Check if input is valid
     if (argc != 2) {
         cout << "Usage: bucketNum" << endl;
         exit(EXIT_FAILURE);

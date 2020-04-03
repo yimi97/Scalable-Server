@@ -7,12 +7,14 @@ sem_t s;
 atomic<int> req_counter(0);
 ofstream log_flow;
 
+//print log
 void log(string str){
     log_flow.open(MYLOG, ofstream::out | ofstream::app);
     log_flow << str;
     log_flow.close();
 }
 
+//delay function provided by the hw requirement
 void delayTime(int d) {
     struct timeval start, check, end;
     double elapsed_seconds;
@@ -23,6 +25,7 @@ void delayTime(int d) {
     } while (elapsed_seconds < d);
 }
 
+//parse the request, update the bucket and send back the new value
 void requestHelper (int client_fd, string req, vector<int> * buckets) {
     //parse request
     int delimiter = req.find(',');
@@ -38,18 +41,20 @@ void requestHelper (int client_fd, string req, vector<int> * buckets) {
     ss << buckets->at(bucketNum);
     lck.unlock();
     const char * value = ss.str().c_str();
-    //cout << "[DEBUG] new value is " << value << endl;
     send(client_fd, value, strlen(value), 0);
     //closeFd
     req_counter.fetch_add(1, std::memory_order_relaxed);
     close(client_fd);
 }
 
+//Function used for create-per-request policy
 void perRequestHandler(int client_fd, string req, vector<int> * buckets) {
     requestHelper(client_fd, req, buckets);
 }
 
+//Function used for pre-create policy
 void preRequestHandler(list<int> * request_fds, vector<int> * buckets) {
+    //Get a new fd from the shared data structure, then receive and handle the request
     while (true) {
         sem_wait(&s);
         unique_lock<mutex> lck1 (fds_mtx);
@@ -59,11 +64,12 @@ void preRequestHandler(list<int> * request_fds, vector<int> * buckets) {
         lck1.unlock();
         char buffer[BUFFER_SIZE];
         recv(cur_fd, buffer, BUFFER_SIZE, 0);
-        //cout << "[DEBUG] received request" << buffer << endl;
         string req(buffer);
         requestHelper(cur_fd, req, buckets);
     }
 }
+
+//Count time, print log every 30 seconds
 void countTime() {
     clock_t start, end;
     int prev_req_counter;
@@ -74,32 +80,18 @@ void countTime() {
         }
     }
     while (true) {
-        // if (clock() - start > 30 * CLOCKS_PER_SEC) {
-        //     end = clock();
-        //     stringstream ss;
-        //     ss << "Throughput " << req_counter - prev_req_counter << ":" << (end - start) / CLOCKS_PER_SEC << "s" << endl;
-        //     prev_req_counter = req_counter;
-        //     string str = ss.str();
-        //     cout << ss.str();
-        //     log(str);
-        //     start = clock();
-        // }
-        this_thread::sleep_for(chrono::milliseconds(1000));
+        this_thread::sleep_for(chrono::milliseconds(30000));
         stringstream ss;
-        // time_t givemetime = time(NULL);
-        // ss << ctime(&givemetime) << "Throughput " << req_counter - prev_req_counter << "/s" << endl;
-        ss << "Throughput(req/s) :" << req_counter - prev_req_counter  << endl;
+        ss << "Throughput(req/30 s) :" << req_counter - prev_req_counter  << endl;
         prev_req_counter = req_counter;
         string str = ss.str();
         cout << ss.str();
         log(str);
-
-    }
-    
+    } 
 }
 
+//Constructor of Server class, create ServerSocket and then listen on incoming requests
 Server::Server(int bucketNum) {
-
     buckets = new vector<int>(bucketNum, 0);
     socklen_t socket_addr_len = sizeof(socket_addr);
     memset(&host_info, 0, sizeof(host_info));
@@ -141,6 +133,7 @@ Server::Server(int bucketNum) {
     t.detach();
 }
 
+//Create-per-request: keep accepting and create new threads
 void Server::per_run() {
     while(true) {
         //accept
@@ -153,19 +146,23 @@ void Server::per_run() {
         //receive
         char buffer[BUFFER_SIZE];
         recv(client_connection_fd, buffer, BUFFER_SIZE, 0);
-        //cout << "[DEBUG] received request" << buffer << endl;
         //create thread
         thread t(perRequestHandler, client_connection_fd, string(buffer), buckets);
         t.detach();
     }
 }
+
+//Pre-create policy
 void Server::pre_run() {
     sem_init(&s, 0, 0);
+    //Create shared data structure
     list<int> *request_fds = new list<int>();
+    //Create thread pool
     for (int i = 0; i < POOL_SIZE; ++i) {
         thread t(preRequestHandler, request_fds, buckets);
         t.detach();
     }
+    //Keep accepting and add the fd to shared data structure
     while(true) {
         int client_connection_fd;
         client_connection_fd = accept(socket_fd, (struct sockaddr *)&socket_addr, &socket_addr_len);

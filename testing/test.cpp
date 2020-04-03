@@ -15,12 +15,12 @@ void client_generator(struct addrinfo *host_info_list) {
                     host_info_list->ai_protocol);
         if (socket_fd == -1) {
             cout << "Error(Client): cannot create socket" << endl;
-            return;
+            //continue;
         } //if    
         status = connect(socket_fd, host_info_list->ai_addr, host_info_list->ai_addrlen);
         if (status == -1) {
             cout << "Error(Client): cannot connect to server socket" << endl;
-            return;
+            //continue;
         } //if
 
         //generate random numbers
@@ -37,13 +37,11 @@ void client_generator(struct addrinfo *host_info_list) {
         send(socket_fd, message, strlen(message), 0);
         char valueBuffer[BUFFER_SIZE];
         recv(socket_fd, valueBuffer, BUFFER_SIZE, 0);
-        cout << "[DEBUG] receive new value " << valueBuffer << endl;
         close(socket_fd);
     }
 }
 int main(int argc, char **argv) {
     srand (time(NULL));
-    // pthread_t thread[REQUEST_NUM];
     struct addrinfo host_info;
     struct addrinfo *host_info_list;
     memset(&host_info, 0, sizeof(host_info));
