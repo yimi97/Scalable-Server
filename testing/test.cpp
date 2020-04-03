@@ -6,21 +6,9 @@
 // ==========================================================
 
 using namespace std;
-void *client_generator(void* args) {
+void client_generator(struct addrinfo *host_info_list) {
     int status;
     int socket_fd;
-    struct addrinfo host_info;
-    struct addrinfo *host_info_list;
-    memset(&host_info, 0, sizeof(host_info));
-    host_info.ai_family   = AF_UNSPEC;
-    host_info.ai_socktype = SOCK_STREAM;
-
-    status = getaddrinfo(SERVER_ADDR, SERVER_PORT, &host_info, &host_info_list);
-    if (status < 0) {
-        cout << "Error(Client): cannot get address info for host" << endl;
-        exit(EXIT_FAILURE);
-    } //if
-
     socket_fd = socket(host_info_list->ai_family, 
                 host_info_list->ai_socktype, 
                 host_info_list->ai_protocol);
@@ -49,19 +37,31 @@ void *client_generator(void* args) {
     char valueBuffer[BUFFER_SIZE];
     recv(socket_fd, valueBuffer, BUFFER_SIZE, 0);
     cout << "[DEBUG] receive new value " << valueBuffer << endl;
-    freeaddrinfo(host_info_list);
     close(socket_fd);
 }
 int main(int argc, char **argv) {
     srand (time(NULL));
-    pthread_t thread[REQUEST_NUM];
+    // pthread_t thread[REQUEST_NUM];
+    struct addrinfo host_info;
+    struct addrinfo *host_info_list;
+    memset(&host_info, 0, sizeof(host_info));
+    host_info.ai_family   = AF_UNSPEC;
+    host_info.ai_socktype = SOCK_STREAM;
+    int status;
+    status = getaddrinfo(SERVER_ADDR, SERVER_PORT, &host_info, &host_info_list);
+    if (status < 0) {
+        cout << "Error(Client): cannot get address info for host" << endl;
+        exit(EXIT_FAILURE);
+    } //if
 
     for (int i = 0; i < REQUEST_NUM; ++i) {
-        pthread_create(&thread[i], NULL, client_generator, NULL);
+        thread t(client_generator, host_info_list);
+        t.detach();
         usleep(1000);
     }
-    for (int i = 0; i < REQUEST_NUM; ++i) {
-        pthread_join(thread[i], NULL);
-    }
+    // for (int i = 0; i < REQUEST_NUM; ++i) {
+    //     pthread_join(thread[i], NULL);
+    // }
+    freeaddrinfo(host_info_list);
     return EXIT_SUCCESS;
 }
