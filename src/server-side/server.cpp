@@ -65,23 +65,28 @@ void preRequestHandler(list<int> * request_fds, vector<int> * buckets) {
         requestHelper(cur_fd, req, buckets);
     }
 }
-void throughputCal(int interval) {
-    int loop_num = 0;
-    int prev_req_counter = 0;
+void countTime() {
+    clock_t start, end;
+    int prev_req_counter;
     while (true) {
-        ++loop_num;
-        // delayTime(1);
-        this_thread::sleep_for(chrono::milliseconds(10000));
-        unique_lock<mutex> lck (print_mtx);
-        if (int increment = req_counter - prev_req_counter) {
-            stringstream ss;
-            ss << "throughput(req/10 sec) :" << increment << endl;
-            string str = ss.str();
-            cout << ss.str();
-            log(str);
+        if (req_counter != 0) {
+            start = clock();
+            break;
         }
-        prev_req_counter = req_counter;
     }
+    while (true) {
+        prev_req_counter = req_counter;
+        sleep(1);
+        if (req_counter - prev_req_counter == 0) {
+            end = clock();
+            break;
+        }
+    }
+    stringstream ss;
+    ss << "Total time (10000 reqs) :" << (end - start) / CLOCKS_PER_SEC << "s" << endl;
+    string str = ss.str();
+    cout << ss.str();
+    log(str);
 }
 
 Server::Server(int bucketNum) {
@@ -123,7 +128,7 @@ Server::Server(int bucketNum) {
         cerr << "  (" << HOSTNAME << "," << PORT << ")" << endl;
         exit(EXIT_FAILURE);
     } //if
-    thread t(throughputCal, 5);
+    thread t(countTime);
     t.detach();
 }
 

@@ -53,7 +53,6 @@ int main(int argc, char **argv) {
         cout << "Error(Client): cannot get address info for host" << endl;
         exit(EXIT_FAILURE);
     } //if
-
     for (int i = 0; i < REQUEST_NUM; ++i) {
         thread t(client_generator, host_info_list);
         t.detach();
