@@ -74,16 +74,28 @@ void countTime() {
         }
     }
     while (true) {
-        if (clock() - start > 60 * CLOCKS_PER_SEC) {
-            end = clock();
-            break;
-        }
+        // if (clock() - start > 30 * CLOCKS_PER_SEC) {
+        //     end = clock();
+        //     stringstream ss;
+        //     ss << "Throughput " << req_counter - prev_req_counter << ":" << (end - start) / CLOCKS_PER_SEC << "s" << endl;
+        //     prev_req_counter = req_counter;
+        //     string str = ss.str();
+        //     cout << ss.str();
+        //     log(str);
+        //     start = clock();
+        // }
+        this_thread::sleep_for(chrono::milliseconds(1000));
+        stringstream ss;
+        // time_t givemetime = time(NULL);
+        // ss << ctime(&givemetime) << "Throughput " << req_counter - prev_req_counter << "/s" << endl;
+        ss << "Throughput(req/s) :" << req_counter - prev_req_counter  << endl;
+        prev_req_counter = req_counter;
+        string str = ss.str();
+        cout << ss.str();
+        log(str);
+
     }
-    stringstream ss;
-    ss << "Throughput " << req_counter << ":" << (end - start) / CLOCKS_PER_SEC << "s" << endl;
-    string str = ss.str();
-    cout << ss.str();
-    log(str);
+    
 }
 
 Server::Server(int bucketNum) {
