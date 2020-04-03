@@ -5,4 +5,4 @@ RUN mkdir -p /var/log/erss
 WORKDIR /code
 add . /code/
 
-ENTRYPOINT ["./run.sh"]
+ENTRYPOINT ["taskset --cpu-list 0 ./run.sh"]

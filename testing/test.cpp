@@ -16,7 +16,7 @@ void *client_generator(void* args) {
     host_info.ai_socktype = SOCK_STREAM;
 
     status = getaddrinfo(SERVER_ADDR, SERVER_PORT, &host_info, &host_info_list);
-    if (status != 0) {
+    if (status < 0) {
         cout << "Error(Client): cannot get address info for host" << endl;
         exit(EXIT_FAILURE);
     } //if
@@ -58,6 +58,7 @@ int main(int argc, char **argv) {
 
     for (int i = 0; i < REQUEST_NUM; ++i) {
         pthread_create(&thread[i], NULL, client_generator, NULL);
+        usleep(1000);
     }
     for (int i = 0; i < REQUEST_NUM; ++i) {
         pthread_join(thread[i], NULL);

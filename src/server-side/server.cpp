@@ -37,6 +37,7 @@ void requestHelper (int client_fd, string req, vector<int> * buckets) {
     //sendBack
     stringstream ss;
     ss << buckets->at(bucketNum);
+    lck.unlock();
     const char * value = ss.str().c_str();
     //cout << "[DEBUG] new value is " << value << endl;
     send(client_fd, value, strlen(value), 0);
@@ -69,11 +70,12 @@ void throughputCal(int interval) {
     int prev_req_counter = 0;
     while (true) {
         ++loop_num;
-        delayTime(1);
+        // delayTime(1);
+        this_thread::sleep_for(chrono::milliseconds(10000));
         unique_lock<mutex> lck (print_mtx);
         if (int increment = req_counter - prev_req_counter) {
             stringstream ss;
-            ss << "throughput(req/sec) " << increment << endl;
+            ss << "throughput(req/10 sec) :" << increment << endl;
             string str = ss.str();
             cout << ss.str();
             log(str);
