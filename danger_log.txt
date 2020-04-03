@@ -1,0 +1,33 @@
+1. When using two VCM, the packet loss rate is higher.
+
+When we used two different virtual machines, we found that the packet loss rate is higher than 
+using the same virtual machine, and thus it may cause the process to end prematurely by using 
+two VCM.
+
+2. The client can not keep sending forever.
+
+We set the client to keep sending requests by using a while loop inside each thread. However, 
+due to the handling ability of the server, it might stop receiving when the number of accumulate 
+waiting requests is too high. Thus, 0 return value of socket() could stop the clients’ sending 
+process.  
+
+3. Underestimation of execution rate.
+
+When testing, our record window is 30 seconds. However, when the problem mentioned above happens, 
+the sending process could end prematurely and requests might not be sent for the complete 30 seconds. 
+In this situation, the number of requests recorded within the whole 30s would be less than that of 
+the normal situation, resulting in the underestimation of throughput.
+
+4. Recording the number of requests from the beginning.
+
+We are not very sure if the execution rate would be slower in the beginning or in the end. And the 
+data we extracted was from the first 30 seconds, which might be not very accurate because of this 
+specific period.
+
+5. POOL_SIZE can influence Pre-create performance a lot.
+
+We found that POOL_SIZE is also a critical factor impacting the throughput of the Pre-create strategy 
+a lot. To a certain extent, the higher the POOL_SIZE is, the better the performance would be. After 
+several experiments, we decided to choose POOL_SIZE as 800, which can help us to get rather stable 
+and appropriate testing results. We think it might be better if POOL_SIZE is also listed as a 
+variable or it is clarified in the requirement.
