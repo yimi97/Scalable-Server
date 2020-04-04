@@ -1,14 +1,14 @@
 # ERSS HW4
 Jingyi Xie (jx95), Yi Mi (ym154)
 
-## Run the server
+## Run the Server
 * In the project root directory, run `sudo docker-compose up`
 
-## Run the testing environment
+## Run the Testing Environment
 * In the project root directory, `cd testing`
 * In `testing` directory, `./clienttest.sh`
 
-## Change the configurations
+## Change the Configurations
 * To change the **server address to connect** (for client), change the `SERVER_ADDR` in `test.cpp`
 * To change the **bucket number**, change the `BUCKET_NUM` in `config.h` **AND** the command line argument of `./server` in `run.sh`
 * To change the **delay count** (small/large), change the `DELAY_SMALL` in `config.h`
