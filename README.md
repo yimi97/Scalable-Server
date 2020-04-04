@@ -17,6 +17,5 @@ Jingyi Xie (jx95), Yi Mi (ym154)
 * To change the **number of cores**, change the `taskset` in `Dockerfile`
 
 ## Throughput  Log
-* `throughput.log` can be found in the `log` directory. Please notice that you may need to wait a few
-seconds for the log to generate.
+* `throughput.log` can be found in the `log` directory. The log file prints the throughput every 30 seconds and is overwritten every time run the docker. Please notice that you may need to wait a few seconds for the log to generate.
 
