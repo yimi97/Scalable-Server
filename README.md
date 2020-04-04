@@ -15,3 +15,8 @@ Jingyi Xie (jx95), Yi Mi (ym154)
 * To change the **create policy** (per/pre), change the `PER_CREATE` in `config.h`
 * To change the **thread pool size** in pre-create policy, change the `POOL_SIZE` in `config.h`
 * To change the **number of cores**, change the `taskset` in `Dockerfile`
+
+## Throughput  Log
+* `throughput.log` can be found in the `log` directory. Please notice that you may need to wait a few
+seconds for the log to generate.
+

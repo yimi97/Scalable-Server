@@ -5,6 +5,8 @@
 #define SERVER_PORT "12345"
 // ==========================================================
 
+#define THREAD_NUM 10000
+
 using namespace std;
 void client_generator(struct addrinfo *host_info_list) {
     while (true) {
@@ -53,7 +55,7 @@ int main(int argc, char **argv) {
         cout << "Error(Client): cannot get address info for host" << endl;
         exit(EXIT_FAILURE);
     } //if
-    for (int i = 0; i < REQUEST_NUM; ++i) {
+    for (int i = 0; i < THREAD_NUM; ++i) {
         thread t(client_generator, host_info_list);
         t.detach();
         usleep(1000);
