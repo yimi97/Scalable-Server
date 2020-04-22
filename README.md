@@ -1,6 +1,9 @@
 # ERSS HW4
 Jingyi Xie (jx95), Yi Mi (ym154)
 
+# [Updated]: Important note on hw4_tests.zip!
+**I used the test cases provided by Brian and passed all the test cases. However, a little modification should be made in line41 of `server.cpp`. Please change it to `ss << buckets->at(bucketNum) << endl;`, We forgot to add a new line at the end of it!**
+
 ## Run the Server
 * In the project root directory, run `sudo docker-compose up`
 
